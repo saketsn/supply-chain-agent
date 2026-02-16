@@ -1,0 +1,14 @@
+[project]
+name = "supply-chain-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp>=2.14.5",
+    "fpdf2>=2.8.5",
+    "google-genai>=1.63.0",
+    "matplotlib>=3.10.8",
+    "pandas>=3.0.0",
+    "python-dotenv>=1.2.1",
+]
