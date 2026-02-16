@@ -114,6 +114,16 @@ def export_audit_pdf(region: str, audit_summary: str) -> str:
     pdf.output(pdf_path)
     return f" Professional Report exported to {pdf_path}"
 
+# 5.
+@mcp.tool()
+def list_available_regions() -> str:
+    """Returns a unique list of all regions present in the supply chain database."""
+    conn = sqlite3.connect(DB_FILE)
+    query = "SELECT DISTINCT order_region FROM orders ORDER BY order_region ASC"
+    regions = [row[0] for row in conn.execute(query).fetchall()]
+    conn.close()
+    return "Available regions: " + ", ".join(regions)
+
 if __name__ == "__main__":
     # Local Test: python server.py (Listens on port 8000)
     # Cloud: Entrypoint remains 'server.py'
