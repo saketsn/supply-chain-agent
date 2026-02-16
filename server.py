@@ -4,16 +4,25 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 from fpdf import FPDF
-from google import genai  # Modernized Import
+from google import genai 
 
-# 1. Configuration & Client Setup
+# 1. Configuration & Robust Pathing
 load_dotenv()
-# Using the new stateless Client for Gemini 2.0 Flash
+
+# Get the absolute path to the directory where server.py lives
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Build absolute paths for the database and data folders
+DB_FILE = os.path.join(BASE_DIR, "data", "processed", "supply_chain.db")
+PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "data", "processed")
+
+# Ensure the processed data directory exists (required for cloud saving)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+
+# Initialize the new Google GenAI Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize MCP Server
 mcp = FastMCP("SupplyChainAuditor")
-DB_FILE = "data/processed/supply_chain.db"
 
 # 2. Tool: Data Auditing
 @mcp.tool()
@@ -66,19 +75,18 @@ def generate_risk_chart(region: str) -> str:
     plt.ylabel("Avg Delay (Days)")
     plt.xticks(rotation=45)
     
-    chart_path = f"data/processed/{region}_risk_chart.png"
+    # Save using absolute path
+    chart_path = os.path.join(PROCESSED_DATA_DIR, f"{region}_risk_chart.png")
     plt.savefig(chart_path, bbox_inches='tight')
-    plt.close() # Vital for 8GB RAM: Clears memory
+    plt.close() 
     
-    return f" Chart generated and saved to {chart_path}"
+    return f"✅ Chart generated and saved to {chart_path}"
 
 # 4. Tool: Professional Reporting
 @mcp.tool()
 def export_audit_pdf(region: str, audit_summary: str) -> str:
     """Generates a professional PDF audit report using the new Gemini SDK."""
-    
-    # New Client-based generation logic
-    prompt = f"Act as a Supply Chain Expert. Write a formal 2-paragraph risk mitigation memo for {region} based on these findings: {audit_summary}. Recommend specific logistical improvements."
+    prompt = f"Act as a Supply Chain Expert. Write a formal 2-paragraph risk mitigation memo for {region} based on: {audit_summary}."
     
     response = client.models.generate_content(
         model="gemini-2.0-flash", 
@@ -86,7 +94,6 @@ def export_audit_pdf(region: str, audit_summary: str) -> str:
     )
     narrative = response.text
 
-    # Build the PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
@@ -96,16 +103,17 @@ def export_audit_pdf(region: str, audit_summary: str) -> str:
     pdf.ln(10)
     pdf.multi_cell(0, 10, narrative)
     
-    # Attach chart if it exists on disk
-    chart_path = f"data/processed/{region}_risk_chart.png"
+    # Load chart using absolute path
+    chart_path = os.path.join(PROCESSED_DATA_DIR, f"{region}_risk_chart.png")
     if os.path.exists(chart_path):
         pdf.image(chart_path, x=10, y=pdf.get_y() + 10, w=180)
 
-    pdf_path = f"data/processed/{region.replace(' ', '_')}_Audit_Report.pdf"
+    pdf_filename = f"{region.replace(' ', '_')}_Audit_Report.pdf"
+    pdf_path = os.path.join(PROCESSED_DATA_DIR, pdf_filename)
     pdf.output(pdf_path)
-    return f" Professional Report successfully exported to {pdf_path}"
+    return f"✅ Professional Report exported to {pdf_path}"
 
 if __name__ == "__main__":
-    # Explicitly setting the port in code for local testing
-    # This provides a consistent endpoint for the MCP Inspector
-    mcp.run(transport="http", port=8000) #
+    # Local Test: python server.py (Listens on port 8000)
+    # Cloud: Entrypoint remains 'server.py'
+    mcp.run(transport="http", port=8000)
