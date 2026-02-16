@@ -13,7 +13,8 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Build absolute paths for the database and data folders
 DB_FILE = os.path.join(BASE_DIR, "data", "processed", "supply_chain.db")
-PROCESSED_DATA_DIR = os.path.join(BASE_DIR, "data", "processed")
+# Required for Cloud Success
+PROCESSED_DATA_DIR = "/tmp"
 
 # Ensure the processed data directory exists (required for cloud saving)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
@@ -80,7 +81,7 @@ def generate_risk_chart(region: str) -> str:
     plt.savefig(chart_path, bbox_inches='tight')
     plt.close() 
     
-    return f"✅ Chart generated and saved to {chart_path}"
+    return f" Chart generated and saved to {chart_path}"
 
 # 4. Tool: Professional Reporting
 @mcp.tool()
@@ -111,7 +112,7 @@ def export_audit_pdf(region: str, audit_summary: str) -> str:
     pdf_filename = f"{region.replace(' ', '_')}_Audit_Report.pdf"
     pdf_path = os.path.join(PROCESSED_DATA_DIR, pdf_filename)
     pdf.output(pdf_path)
-    return f"✅ Professional Report exported to {pdf_path}"
+    return f" Professional Report exported to {pdf_path}"
 
 if __name__ == "__main__":
     # Local Test: python server.py (Listens on port 8000)
